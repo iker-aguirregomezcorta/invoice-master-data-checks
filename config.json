@@ -1,0 +1,17 @@
+{
+  "paths": {
+    "customer_master": "data/customer_master.xlsx",
+    "invoices_folder": "data/invoices",
+    "output_folder": "output"
+  },
+  "email": {
+    "enabled": false,
+    "smtp_server": "smtp.example.com",
+    "smtp_port": 587,
+    "use_tls": true,
+    "username": "",
+    "password_env_var": "SMTP_PASSWORD",
+    "sender": "invoice-checks@example.com",
+    "recipients": ["accounts@example.com"]
+  }
+}

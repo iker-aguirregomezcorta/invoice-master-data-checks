@@ -1,0 +1,28 @@
+file,number,planted_error,expected_status,expected_fields
+Invoice_01.pdf,INV-2600419,"Formatting only (upper case, C/, SL, ES prefix on the VAT ID)",validated,
+Invoice_02.pdf,INV-2600422,"Formatting only (upper case, C/, SL, ES prefix on the VAT ID)",validated,
+Invoice_03.pdf,INV-2600423,Town differs from the master file,mismatch,Town
+Invoice_04.pdf,INV-2600428,"Formatting only (upper case, C/, SL, ES prefix on the VAT ID)",validated,
+Invoice_05.pdf,INV-2600433,No errors,validated,
+Invoice_06.pdf,INV-2600436,No errors,validated,
+Invoice_07.pdf,INV-2600440,No errors,validated,
+Invoice_08.pdf,INV-2600442,One wrong digit in the postcode,mismatch,Postcode
+Invoice_09.pdf,INV-2600447,No errors,validated,
+Invoice_10.pdf,INV-2600453,No errors,validated,
+Invoice_11.pdf,INV-2600455,"3-page invoice, no errors",validated,
+Invoice_12.pdf,INV-2600458,Customer has no VAT ID in the master file,mismatch,VAT ID
+Invoice_13.pdf,INV-2600459,One wrong letter in the company name,mismatch,Company name
+Invoice_14.pdf,INV-2600462,"Formatting only (upper case, C/, SL, ES prefix on the VAT ID)",validated,
+Invoice_15.pdf,INV-2600463,Street number with swapped digits,mismatch,Street
+Invoice_16.pdf,INV-2600464,No errors,validated,
+Invoice_17.pdf,INV-2600468,No errors,validated,
+Invoice_18.pdf,INV-2600473,Outdated postcode and town,mismatch,Postcode|Town
+Invoice_19.pdf,INV-2600474,Street number with swapped digits,mismatch,Street
+Invoice_20.pdf,INV-2600476,One wrong digit in the VAT ID,mismatch,VAT ID
+Invoice_21.pdf,INV-2600480,One wrong digit in the postcode,mismatch,Postcode
+Invoice_22.pdf,INV-2600482,One wrong digit in the VAT ID,mismatch,VAT ID
+Invoice_23.pdf,INV-2600485,No errors,validated,
+Invoice_24.pdf,INV-2600487,No errors,validated,
+Invoice_25.pdf,INV-2600492,Customer not in the master file,mismatch,Customer
+Invoice_26.pdf,INV-2600419,Copy of Invoice_01.pdf (same invoice submitted twice),duplicate,
+Invoice_27.pdf,,Scanned PDF with no text,unreadable,

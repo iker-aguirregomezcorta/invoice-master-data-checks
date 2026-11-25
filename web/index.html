@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice checks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #EEF1F0;
+  --sheet: #FFFFFF;
+  --ink: #1C2830;
+  --muted: #586771;
+  --rule: #D3DAD8;
+  --action: #1D5A66;
+  --action-ink: #FFFFFF;
+  --ok: #2B7754;
+  --ok-tint: #E3F0E9;
+  --bad: #A8432B;
+  --bad-tint: #F7E7E2;
+  --warn: #8A6514;
+  --warn-tint: #F5EEDC;
+  --mark-bad: #F2C9BD;
+  --mark-ok: #CFE6D9;
+  --sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #151C21; --sheet: #1D262C; --ink: #E4EAEC; --muted: #9AA8AF; --rule: #33414A;
+    --action: #5FB0BE; --action-ink: #0E1A1E; --ok: #6CC49A; --ok-tint: #1D3329;
+    --bad: #EE8D72; --bad-tint: #3A231D; --warn: #E2BC5E; --warn-tint: #35301D;
+    --mark-bad: #6B3427; --mark-ok: #24513C; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--sans); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
+.wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+header { background: var(--sheet); border-bottom: 1px solid var(--rule); }
+.top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; padding-top: 20px; }
+h1 { font-size: 1.375rem; margin: 0; letter-spacing: -0.01em; }
+.status { color: var(--muted); font-size: 0.875rem; display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.status b { color: var(--ink); font-weight: 700; }
+nav { display: flex; gap: 4px; margin-top: 14px; overflow-x: auto; }
+nav button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px 9px; cursor: pointer; color: var(--muted); white-space: nowrap; }
+nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--action); font-weight: 700; }
+nav .n { font-size: 0.8125rem; color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+main.wrap { padding-top: 32px; padding-bottom: 64px; }
+section[hidden] { display: none; }
+h2 { font-size: 1.125rem; margin: 0 0 4px; }
+.intro { color: var(--muted); margin: 0 0 20px; max-width: 64ch; }
+
+/* Buttons */
+.btn { border: 1px solid var(--action); background: var(--action); color: var(--action-ink); padding: 9px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; }
+.btn.sec { background: transparent; color: var(--action); }
+.btn:disabled { opacity: .55; cursor: progress; }
+a.link { color: var(--action); font-weight: 700; }
+
+/* Upload area */
+.upload { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: stretch; }
+.drop { border: 2px dashed var(--rule); border-radius: 10px; background: var(--sheet); padding: 28px 24px; cursor: pointer; transition: border-color .15s, background .15s; }
+.drop:hover, .drop.over { border-color: var(--action); }
+.drop.over { background: color-mix(in srgb, var(--action) 6%, var(--sheet)); }
+.drop strong { display: block; font-size: 1.0625rem; }
+.drop span { color: var(--muted); font-size: 0.9375rem; }
+.folder { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center; gap: 10px; max-width: 300px; }
+.folder p { margin: 0; font-size: 0.875rem; color: var(--muted); }
+@media (max-width: 720px) { .upload { grid-template-columns: 1fr; } .folder { max-width: none; } }
+
+/* Messages */
+.msg { margin: 20px 0 0; padding: 12px 16px; border-radius: 8px; border-left: 4px solid var(--bad); background: var(--bad-tint); }
+.msg[hidden] { display: none; }
+
+/* Results */
+.summary { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 32px 0 12px; align-items: baseline; }
+.summary .figure { font-size: 0.9375rem; color: var(--muted); }
+.summary .figure b { font-size: 1.25rem; color: var(--ink); margin-right: 4px; }
+.list { list-style: none; margin: 0; padding: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.inv { border-top: 1px solid var(--rule); border-left: 5px solid var(--muted); }
+.inv:first-child { border-top: 0; }
+.inv.validated { border-left-color: var(--ok); }
+.inv.mismatch { border-left-color: var(--bad); }
+.inv.duplicate { border-left-color: var(--rule); }
+.inv.unreadable { border-left-color: var(--warn); }
+.row { display: grid; grid-template-columns: 9.5rem 1fr auto; gap: 4px 16px; align-items: baseline; padding: 14px 18px; }
+.num { font-family: var(--mono); font-weight: 600; }
+.cust { min-width: 0; }
+.cust .name { font-weight: 700; }
+.cust .meta { color: var(--muted); font-size: 0.875rem; }
+.chip { font-size: 0.875rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+.validated .chip { background: var(--ok-tint); color: var(--ok); }
+.mismatch .chip { background: var(--bad-tint); color: var(--bad); }
+.duplicate .chip { background: var(--paper); color: var(--muted); }
+.unreadable .chip { background: var(--warn-tint); color: var(--warn); }
+@media (max-width: 600px) { .row { grid-template-columns: 1fr auto; } .cust { grid-column: 1 / -1; grid-row: 2; } }
+
+/* Side-by-side comparison: the core of the page */
+.cmp { padding: 0 18px 18px; margin-left: calc(9.5rem + 16px); }
+@media (max-width: 600px) { .cmp { margin-left: 0; } }
+.fld { display: grid; grid-template-columns: 8.5rem 1fr 1fr; gap: 0 16px; padding: 10px 0; border-top: 1px dashed var(--rule); }
+.fld:first-child { border-top: 0; }
+.fld .label { font-weight: 700; padding-top: 18px; }
+.side small { display: block; color: var(--muted); font-size: 0.8125rem; }
+.val { font-family: var(--mono); font-size: 1.0625rem; word-break: break-word; }
+.val mark { border-radius: 3px; padding: 0 1px; color: inherit; }
+.on-invoice mark { background: var(--mark-bad); box-shadow: inset 0 -2px var(--bad); }
+.in-master mark { background: var(--mark-ok); box-shadow: inset 0 -2px var(--ok); }
+@media (max-width: 600px) { .fld { grid-template-columns: 1fr 1fr; } .fld .label { grid-column: 1 / -1; padding-top: 0; } }
+.alert { margin-top: 10px; font-size: 0.875rem; color: var(--muted); }
+.reason { padding: 0 18px 16px; margin-left: calc(9.5rem + 16px); color: var(--muted); font-size: 0.9375rem; }
+@media (max-width: 600px) { .reason { margin-left: 0; } }
+
+/* Tables */
+.bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; margin-bottom: 16px; }
+.table { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9375rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+td.w { white-space: normal; min-width: 11rem; }
+th { font-weight: 700; color: var(--muted); font-size: 0.8125rem; background: var(--sheet); position: sticky; top: 0; }
+tr:last-child td { border-bottom: 0; }
+td.n { text-align: right; font-family: var(--mono); }
+td.m { font-family: var(--mono); }
+tfoot td { font-weight: 700; border-top: 2px solid var(--ink); border-bottom: 0; }
+.empty { padding: 32px 20px; color: var(--muted); text-align: left; }
+
+/* Report */
+form.filter { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: end; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }
+form.filter label { display: flex; flex-direction: column; gap: 4px; font-size: 0.875rem; color: var(--muted); }
+form.filter input, form.filter select { border: 1px solid var(--rule); background: var(--paper); border-radius: 6px; padding: 7px 10px; color: var(--ink); }
+fieldset { border: 0; padding: 0; margin: 0; display: flex; gap: 4px; }
+fieldset legend { font-size: 0.875rem; color: var(--muted); margin-bottom: 4px; padding: 0; }
+.seg label { flex-direction: row !important; align-items: center; gap: 6px !important; border: 1px solid var(--rule); border-radius: 6px; padding: 7px 12px; cursor: pointer; color: var(--ink) !important; font-size: 0.9375rem !important; }
+.seg input { accent-color: var(--action); margin: 0; }
+.seg label:has(input:checked) { border-color: var(--action); background: color-mix(in srgb, var(--action) 8%, var(--sheet)); }
+.shortcuts { display: flex; gap: 6px; flex-wrap: wrap; }
+.shortcuts button { background: none; border: 1px solid var(--rule); border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 0.875rem; color: var(--muted); }
+.shortcuts button:hover { color: var(--ink); border-color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <h1>Invoice checks</h1>
+      <div class="status" id="status">Loading…</div>
+    </div>
+    <nav role="tablist" aria-label="Sections">
+      <button role="tab" aria-selected="true" aria-controls="p-validate" data-tab="validate">Validate</button>
+      <button role="tab" aria-selected="false" aria-controls="p-ledger" data-tab="ledger">Validated<span class="n" id="n-led"></span></button>
+      <button role="tab" aria-selected="false" aria-controls="p-exceptions" data-tab="exceptions">Exceptions<span class="n" id="n-exc"></span></button>
+      <button role="tab" aria-selected="false" aria-controls="p-report" data-tab="report">Report</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- VALIDATE -->
+  <section id="p-validate" role="tabpanel">
+    <h2>Validate invoices</h2>
+    <p class="intro">Each invoice's company name, VAT ID and billing address are compared with the customer master file. If everything matches, the invoice is logged; if not, an email alert says exactly which field doesn't match.</p>
+    <div class="upload">
+      <label class="drop" id="drop" tabindex="0">
+        <strong>Drop PDF invoices here</strong>
+        <span>or click to choose them. You can upload several at once.</span>
+        <input type="file" id="files" accept="application/pdf,.pdf" multiple hidden>
+      </label>
+      <div class="folder">
+        <p id="folder-txt">Input folder</p>
+        <button class="btn sec" id="btn-folder" type="button">Validate the folder</button>
+      </div>
+    </div>
+    <div class="msg" id="msg" role="alert" hidden></div>
+    <div id="results" aria-live="polite"></div>
+  </section>
+
+  <!-- LEDGER -->
+  <section id="p-ledger" role="tabpanel" hidden>
+    <div class="bar">
+      <div>
+        <h2>Validated invoices</h2>
+        <p class="intro" style="margin:0">Invoices that matched the master file exactly, with their validation timestamp.</p>
+      </div>
+      <a class="link" href="/api/download/ledger">Download Excel</a>
+    </div>
+    <div class="table" id="t-ledger"></div>
+  </section>
+
+  <!-- EXCEPTIONS -->
+  <section id="p-exceptions" role="tabpanel" hidden>
+    <div class="bar">
+      <div>
+        <h2>Exceptions</h2>
+        <p class="intro" style="margin:0">One row per mismatching field. Fix the invoice or the master file and validate it again.</p>
+      </div>
+      <a class="link" href="/api/download/exceptions">Download Excel</a>
+    </div>
+    <div class="table" id="t-exceptions"></div>
+  </section>
+
+  <!-- REPORT -->
+  <section id="p-report" role="tabpanel" hidden>
+    <h2>Validated invoices report</h2>
+    <p class="intro">Choose the period and whether to filter by the day each invoice was validated or by its issue date.</p>
+    <form class="filter" id="f-report">
+      <label>From <input type="date" name="start" required></label>
+      <label>To <input type="date" name="end" required></label>
+      <fieldset class="seg">
+        <legend>Filter by</legend>
+        <label><input type="radio" name="by" value="validation" checked> Validation date</label>
+        <label><input type="radio" name="by" value="invoice"> Invoice date</label>
+      </fieldset>
+      <div class="shortcuts" aria-label="Quick periods">
+        <button type="button" data-range="today">Today</button>
+        <button type="button" data-range="month">This month</button>
+        <button type="button" data-range="previous">Last month</button>
+      </div>
+      <button class="btn" type="submit">Show report</button>
+    </form>
+    <div id="report"></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur = n => n == null ? "" : "€ " + n.toLocaleString("en-GB", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmtDate = s => { if (!s) return ""; const [d, h] = String(s).split(" "); const [y, m, dd] = d.split("-"); return `${dd}/${m}/${y}` + (h ? ` ${h}` : ""); };
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.detail || `Error ${r.status}`);
+  return body;
+}
+
+/* ---------- Header status ---------- */
+async function loadStatus() {
+  try {
+    const s = await api("/api/status");
+    const m = s.master.error ? `<span style="color:var(--bad)">${esc(s.master.error)}</span>`
+      : `Master file: <b>${s.master.customers} customers</b>`;
+    const email = s.email_enabled ? `Alerts: <b>by email</b> to ${esc(s.recipients.join(", "))}`
+      : `Alerts: <b>saved as .eml</b> (sending disabled)`;
+    $("#status").innerHTML = `<span>${m}</span><span>${email}</span>`;
+    $("#n-led").textContent = s.validated;
+    $("#n-exc").textContent = s.exceptions;
+    const n = s.pdfs_in_folder.length;
+    $("#folder-txt").innerHTML = n
+      ? `The input folder has <b style="color:var(--ink)">${n} PDF${n === 1 ? "" : "s"}</b>.`
+      : "The input folder is empty.";
+    $("#btn-folder").disabled = !n;
+  } catch (err) {
+    $("#status").textContent = "Cannot reach the app. Is the server window still open?";
+  }
+}
+
+/* ---------- Character-level diff (LCS) ---------- */
+function diff(a, b) {
+  a = String(a ?? ""); b = String(b ?? "");
+  const n = a.length, m = b.length;
+  const L = Array.from({length: n + 1}, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const ka = new Array(n).fill(false), kb = new Array(m).fill(false);
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) { ka[i] = kb[j] = true; i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) i++; else j++;
+  }
+  const paint = (s, keep) => {
+    let out = "", open = false;
+    for (let k = 0; k < s.length; k++) {
+      if (!keep[k] && !open) { out += "<mark>"; open = true; }
+      if (keep[k] && open) { out += "</mark>"; open = false; }
+      out += esc(s[k]);
+    }
+    return out + (open ? "</mark>" : "");
+  };
+  return [paint(a, ka), paint(b, kb)];
+}
+
+/* ---------- Validate ---------- */
+const CHIP = {validated: "Validated", mismatch: "Mismatch", duplicate: "Already logged", unreadable: "Unreadable"};
+
+function showResults(res) {
+  const n = k => res.filter(r => r.status === k).length;
+  const TXT = {validated: ["validated", "validated"], mismatch: ["with mismatches", "with mismatches"],
+    duplicate: ["already logged", "already logged"], unreadable: ["unreadable", "unreadable"]};
+  const figures = Object.keys(TXT).filter(k => n(k))
+    .map(k => `<span class="figure"><b>${n(k)}</b>${TXT[k][n(k) === 1 ? 0 : 1]}</span>`).join("");
+  const rows = res.map(r => {
+    const meta = [r.vat_id, r.date && fmtDate(r.date), r.total != null && eur(r.total)].filter(Boolean).map(esc).join(", ");
+    let detail = "";
+    if (r.status === "mismatch") {
+      const fields = r.mismatches.map(m => {
+        const [fi, ma] = m.field === "Customer" ? [esc(m.invoice), esc(m.master)] : diff(m.invoice, m.master);
+        return `<div class="fld"><div class="label">${esc(m.field)}</div>
+          <div class="side on-invoice"><small>On the invoice</small><div class="val">${fi}</div></div>
+          <div class="side in-master"><small>In the master file</small><div class="val">${ma}</div></div></div>`;
+      }).join("");
+      const alert = r.alert_file
+        ? `Alert saved as an email, not sent. <a class="link" href="/api/alerts/${encodeURIComponent(r.alert_file)}">Open the alert email</a>`
+        : `${esc(r.alert)}.`;
+      detail = `<div class="cmp">${fields}<div class="alert">${alert}</div></div>`;
+    } else if (r.status === "unreadable") {
+      detail = `<div class="reason">${esc(r.reason)} Recorded in exceptions for manual review.</div>`;
+    } else if (r.status === "duplicate") {
+      detail = `<div class="reason">This invoice was already in the ledger; it is not added again.</div>`;
+    }
+    return `<li class="inv ${r.status}">
+      <div class="row"><span class="num">${esc(r.number || "—")}</span>
+        <div class="cust"><div class="name">${esc(r.customer || r.file)}</div><div class="meta">${meta || esc(r.file)}</div></div>
+        <span class="chip">${CHIP[r.status]}</span></div>${detail}</li>`;
+  }).join("");
+  $("#results").innerHTML = `<div class="summary">${figures}</div><ul class="list">${rows}</ul>`;
+}
+
+async function runValidation(request, button) {
+  $("#msg").hidden = true;
+  const txt = button?.textContent;
+  if (button) { button.disabled = true; button.textContent = "Validating…"; }
+  $("#drop").querySelector("strong").textContent = "Validating…";
+  try {
+    const {results} = await request();
+    showResults(results);
+  } catch (err) {
+    $("#msg").textContent = err.message; $("#msg").hidden = false;
+  } finally {
+    if (button) { button.disabled = false; button.textContent = txt; }
+    $("#drop").querySelector("strong").textContent = "Drop PDF invoices here";
+    loadStatus();
+  }
+}
+
+function upload(files) {
+  const pdfs = [...files].filter(f => f.name.toLowerCase().endsWith(".pdf"));
+  if (!pdfs.length) { $("#msg").textContent = "Only PDF files are accepted."; $("#msg").hidden = false; return; }
+  const fd = new FormData(); pdfs.forEach(f => fd.append("files", f));
+  runValidation(() => api("/api/validate", {method: "POST", body: fd}));
+}
+
+const drop = $("#drop"), input = $("#files");
+drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+input.addEventListener("change", () => { upload(input.files); input.value = ""; });
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => upload(e.dataTransfer.files));
+$("#btn-folder").addEventListener("click", e => runValidation(() => api("/api/validate-folder", {method: "POST"}), e.currentTarget));
+
+/* ---------- Tables ---------- */
+function table(rows, cols, empty, foot) {
+  if (!rows.length) return `<p class="empty">${empty}</p>`;
+  const th = cols.map(c => `<th>${esc(c.t)}</th>`).join("");
+  const tr = rows.map(r => `<tr>${cols.map(c => `<td class="${c.cl || ""}">${c.f ? c.f(r[c.k]) : esc(r[c.k])}</td>`).join("")}</tr>`).join("");
+  return `<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody>${foot || ""}</table>`;
+}
+const LEDGER_COLS = [
+  {t: "Invoice no.", k: "Invoice no.", cl: "m"}, {t: "Invoice date", k: "Invoice date", f: fmtDate},
+  {t: "Customer", k: "Company name", cl: "w"}, {t: "VAT ID", k: "VAT ID", cl: "m"},
+  {t: "Base", k: "Taxable base", cl: "n", f: eur}, {t: "VAT", k: "VAT amount", cl: "n", f: eur},
+  {t: "Total", k: "Total", cl: "n", f: eur}, {t: "Validated at", k: "Validated at", f: fmtDate},
+];
+async function loadLedger() {
+  const rows = await api("/api/ledger");
+  rows.reverse();
+  $("#t-ledger").innerHTML = table(rows, LEDGER_COLS, "No validated invoices yet. Validate some in the Validate tab.");
+}
+async function loadExceptions() {
+  const rows = await api("/api/exceptions");
+  rows.reverse();
+  $("#t-exceptions").innerHTML = table(rows, [
+    {t: "Detected at", k: "Detected at", f: fmtDate}, {t: "Invoice no.", k: "Invoice no.", cl: "m"},
+    {t: "File", k: "File"}, {t: "Field", k: "Field"},
+    {t: "On the invoice", k: "Invoice value", cl: "m"}, {t: "In the master file", k: "Master value", cl: "m"},
+  ], "No exceptions.");
+}
+
+/* ---------- Report ---------- */
+const form = $("#f-report");
+function setRange(kind) {
+  const t = new Date(); let s = new Date(t), e = new Date(t);
+  if (kind === "month") { s = new Date(t.getFullYear(), t.getMonth(), 1); }
+  if (kind === "previous") { s = new Date(t.getFullYear(), t.getMonth() - 1, 1); e = new Date(t.getFullYear(), t.getMonth(), 0); }
+  form.start.value = iso(s); form.end.value = iso(e);
+}
+document.querySelectorAll("[data-range]").forEach(b => b.addEventListener("click", () => { setRange(b.dataset.range); form.requestSubmit(); }));
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  const q = new URLSearchParams({start: form.start.value, end: form.end.value, by: form.by.value});
+  try {
+    const r = await api(`/api/report?${q}`);
+    const foot = `<tfoot><tr><td colspan="4">Period total</td><td class="n">${eur(r.base)}</td><td class="n">${eur(r.vat)}</td><td class="n">${eur(r.total)}</td><td></td></tr></tfoot>`;
+    const what = form.by.value === "validation" ? "validated" : "issued";
+    $("#report").innerHTML = `<div class="bar"><p style="margin:0"><b>${r.rows.length}</b> invoice${r.rows.length === 1 ? "" : "s"} ${what} from ${fmtDate(form.start.value)} to ${fmtDate(form.end.value)}.</p>
+      ${r.rows.length ? `<a class="link" href="/api/report/download?${q}">Download report as Excel</a>` : ""}</div>
+      <div class="table">${table(r.rows, LEDGER_COLS, "No validated invoices in that period.", foot)}</div>`;
+  } catch (err) {
+    $("#report").innerHTML = `<div class="msg" role="alert">${esc(err.message)}</div>`;
+  }
+});
+
+/* ---------- Tabs ---------- */
+const LOAD = {ledger: loadLedger, exceptions: loadExceptions};
+document.querySelectorAll('[role="tab"]').forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll('[role="tab"]').forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll('[role="tabpanel"]').forEach(p => p.hidden = p.id !== `p-${t.dataset.tab}`);
+  LOAD[t.dataset.tab]?.().catch(err => alert(err.message));
+}));
+
+setRange("today");
+loadStatus();
+</script>
+</body>
+</html>
